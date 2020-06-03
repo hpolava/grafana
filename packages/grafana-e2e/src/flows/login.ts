@@ -23,5 +23,12 @@ export const login = (username: string = 'admin', password: string = 'admin') =>
   e2e()
     .get('.login-page')
     .should('not.exist');
+
+  // Remember nothing from previous sessions
+  // @todo https://github.com/javierbrea/cypress-localstorage-commands/issues/93
+  e2e()
+    .wrap({ clearLocalStorage: () => localStorage.clear() })
+    .invoke('clearLocalStorage');
+
   e2e().logToConsole('Logged in with username:', username);
 };
