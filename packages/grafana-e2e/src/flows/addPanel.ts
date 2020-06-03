@@ -1,5 +1,6 @@
 import { e2e } from '../index';
 import { getScenarioContext } from '../support/scenarioContext';
+import { requireLocalStorage } from '../support/localStorage';
 
 export interface AddPanelConfig {
   dashboardUid: string;
@@ -31,20 +32,23 @@ export const addPanel = (config?: Partial<AddPanelConfig>): any =>
       .get('.ds-picker')
       .click()
       .contains('[id^="react-select-"][id*="-option-"]', dataSourceName)
+      .scrollIntoView()
       .click();
 
+    openOptionsGroup('settings');
     getOptionsGroup('settings')
       .find('[value="Panel Title"]')
+      .scrollIntoView()
       .clear()
       .type(panelTitle);
-    toggleOptionsGroup('settings');
+    closeOptionsGroup('settings');
 
-    toggleOptionsGroup('type');
+    openOptionsGroup('type');
     e2e()
       .get(`[aria-label="Plugin visualization item ${visualizationName}"]`)
       .scrollIntoView()
       .click();
-    toggleOptionsGroup('type');
+    closeOptionsGroup('type');
 
     queriesForm(fullConfig);
 
@@ -63,10 +67,33 @@ export const addPanel = (config?: Partial<AddPanelConfig>): any =>
     return e2e().wrap({ config: fullConfig });
   });
 
+// @todo this actually returns type `Cypress.Chainable`
+const closeOptionsGroup = (name: string): any =>
+  isOptionsGroupOpen(name).then((isOpen: any) => {
+    if (isOpen) {
+      toggleOptionsGroup(name);
+    }
+  });
+
 const getOptionsGroup = (name: string) => e2e().get(`.options-group:has([aria-label="Options group Panel ${name}"])`);
+
+// @todo this actually returns type `Cypress.Chainable`
+const isOptionsGroupOpen = (name: string): any =>
+  requireLocalStorage(`grafana.dashboard.editor.ui.optionGroup[Panel ${name}]`)
+    .then(({ defaultToClosed }: any) => {
+      // @todo remove `wrap` when possible
+      return e2e().wrap(!defaultToClosed);
+    });
+
+// @todo this actually returns type `Cypress.Chainable`
+const openOptionsGroup = (name: string): any =>
+  isOptionsGroupOpen(name).then((isOpen: any) => {
+    if (!isOpen) {
+      toggleOptionsGroup(name);
+    }
+  });
 
 const toggleOptionsGroup = (name: string) =>
   getOptionsGroup(name)
     .find('.editor-options-group-toggle')
-    .scrollIntoView()
     .click();
